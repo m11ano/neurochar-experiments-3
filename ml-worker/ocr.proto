@@ -1,0 +1,59 @@
+syntax = "proto3";
+package ocr;
+
+option go_package = "github.com/m11ano/neurochar-experiments-3/pkg/ocrpb;ocrpb";
+
+service OcrService {
+  rpc ExtractTextBidi(stream ClientMsg) returns (stream ServerMsg);
+}
+
+message ClientMsg {
+  oneof payload {
+    Start start = 1;
+    PdfChunk chunk = 2;
+    End end = 3;
+    Ping ping = 4;
+  }
+}
+
+message ServerMsg {
+  oneof payload {
+    Ready ready = 1;
+    Pong pong = 2;
+    Progress progress = 3;
+    Result result = 4;
+    Error error = 5;
+  }
+}
+
+message Start {
+  string request_id = 1;
+  string filename = 2;
+  string content_type = 3;
+  int32 dpi = 4;
+  string device = 5;
+}
+
+message PdfChunk { bytes data = 1; }
+message End {}
+
+message Ping { string id = 1; int64 ts_ms = 2; }
+
+message Ready { string request_id = 1; bool gpu = 2; string device = 3; }
+
+message Pong { string id = 1; int64 ts_ms = 2; }
+
+message Progress { string stage = 1; int32 pages_done = 2; }
+
+message Result {
+  string request_id = 1;
+  string engine = 2;
+  bool gpu = 3;
+  string device = 4;
+  int32 dpi = 5;
+  repeated string languages = 6;
+  string text = 7;
+  string filename = 8;
+}
+
+message Error { string message = 1; }

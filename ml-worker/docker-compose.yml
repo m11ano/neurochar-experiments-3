@@ -1,0 +1,56 @@
+services:
+  worker-1:
+    build: .
+    ports:
+      - '8000:8000'
+      - '50051:50051'
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  worker-2:
+    build: .
+    ports:
+      - '8001:8000'
+      - '50052:50051'
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  worker-3:
+    build: .
+    ports:
+      - '8002:8000'
+      - '50053:50051'
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  worker-4:
+    build: .
+    ports:
+      - '8003:8000'
+      - '50054:50051'
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -1,0 +1,142 @@
+networks:
+  default:
+    external: true
+    name: neurochar-network
+
+services:
+    backend-app:
+        image: neurochar-backend-backend:v2
+        networks:
+            - default
+        ports:
+            - 127.0.0.1:8080:8080
+        restart: unless-stopped
+        logging:
+            driver: json-file
+            options:
+                max-size: "50m"
+                max-file: "5" 
+        environment:
+            TZ: Europe/Moscow
+            GLOBAL_SERVER_IP: ${SERVER_IP}
+            GLOBAL_PROJECT_FRONTEND_URL: ${PROJECT_FRONTEND_URL}
+            GLOBAL_PROJECT_API_URL: ${PROJECT_API_URL}
+            GLOBAL_CPANEL_FRONTEND_URL: ${CPANEL_FRONTEND_URL}
+            GLOBAL_CPANEL_API_URL: ${CPANEL_API_URL}
+            GLOBAL_TENANT_MAIN_DOMAIN: ${TENANT_MAIN_DOMAIN}
+            GLOBAL_TENANT_URL_SCHEME: ${TENANT_URL_SCHEME}
+            BACKEND_APP_BASE_IS_PROD: true
+            BACKEND_APP_BASE_USE_FX_LOGGER: false
+            BACKEND_APP_BASE_USE_LOGGER: true
+            BACKEND_APP_BASE_LOG_SQL_QUERIES: false
+            BACKEND_APP_BASE_LOG_HTTP: true
+            BACKEND_APP_HTTP_UNDER_PROXY: true
+            BACKEND_APP_HTTP_CORS_ALLOW_ORIGINS: "neurochar.ru"
+            AUTH_JWT_ACCESS_SECRET: ${AUTH_JWT_ACCESS_SECRET}
+            AUTH_JWT_REFRESH_SECRET: ${AUTH_JWT_REFRESH_SECRET}
+            ALERTS_BOT_TOKEN: ${ALERTS_BOT_TOKEN}
+            ALERTS_TARGET_CHANNEL: ${ALERTS_TARGET_CHANNEL}
+            POSTGRES_MASTER_DSN: ${POSTGRES_MASTER_DSN}
+            STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+            STORAGE_S3_ACCESS_KEY: ${STORAGE_S3_ACCESS_KEY}
+            STORAGE_S3_SECRET_KEY: ${STORAGE_S3_SECRET_KEY}
+            STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+            STORAGE_S3_URL: ${STORAGE_S3_URL}
+            STORAGE_S3_URL_IS_HOST: ${STORAGE_S3_URL_IS_HOST}
+            STORAGE_S3_URL_HOST_PREFIX: ${STORAGE_S3_URL_HOST_PREFIX}
+            STORAGE_S3_URL_HOST_POSTFIX: ${STORAGE_S3_URL_HOST_POSTFIX}
+            EMAILING_SMTP_HOST: ${EMAILING_SMTP_HOST}
+            EMAILING_SMTP_PORT: ${EMAILING_SMTP_PORT}
+            EMAILING_SMTP_USER: ${EMAILING_SMTP_USER}
+            EMAILING_SMTP_PASSWORD: ${EMAILING_SMTP_PASSWORD}
+            EMAILING_DEFAULT_FROM_EMAIL: ${EMAILING_DEFAULT_FROM_EMAIL}
+            EMAILING_DEFAULT_FROM_TITLE: ${EMAILING_DEFAULT_FROM_TITLE}
+
+    cpanel-app:
+        image: neurochar-backend-cpanel:v2
+        networks:
+            - default
+        ports:
+            - 127.0.0.1:8081:8081
+        restart: unless-stopped
+        logging:
+            driver: json-file
+            options:
+                max-size: "50m"
+                max-file: "5" 
+        environment:
+            TZ: Europe/Moscow
+            GLOBAL_SERVER_IP: ${SERVER_IP}
+            GLOBAL_PROJECT_FRONTEND_URL: ${PROJECT_FRONTEND_URL}
+            GLOBAL_PROJECT_API_URL: ${PROJECT_API_URL}
+            GLOBAL_CPANEL_FRONTEND_URL: ${CPANEL_FRONTEND_URL}
+            GLOBAL_CPANEL_API_URL: ${CPANEL_API_URL}
+            GLOBAL_TENANT_MAIN_DOMAIN: ${TENANT_MAIN_DOMAIN}
+            GLOBAL_TENANT_URL_SCHEME: ${TENANT_URL_SCHEME}
+            CPANEL_APP_BASE_IS_PROD: true
+            CPANEL_APP_BASE_USE_FX_LOGGER: false
+            CPANEL_APP_BASE_USE_LOGGER: true
+            CPANEL_APP_BASE_LOG_SQL_QUERIES: false
+            CPANEL_APP_BASE_LOG_HTTP: true
+            CPANEL_APP_HTTP_UNDER_PROXY: true
+            CPANEL_APP_HTTP_CORS_ALLOW_ORIGINS: "neurochar.ru"
+            CPANEL_APP_AUTH_JWT_SECRET: ${CPANEL_APP_AUTH_JWT_SECRET}
+            ALERTS_BOT_TOKEN: ${ALERTS_BOT_TOKEN}
+            ALERTS_TARGET_CHANNEL: ${ALERTS_TARGET_CHANNEL}
+            POSTGRES_MASTER_DSN: ${POSTGRES_MASTER_DSN}
+            STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+            STORAGE_S3_ACCESS_KEY: ${STORAGE_S3_ACCESS_KEY}
+            STORAGE_S3_SECRET_KEY: ${STORAGE_S3_SECRET_KEY}
+            STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+            STORAGE_S3_URL: ${STORAGE_S3_URL}
+            STORAGE_S3_URL_IS_HOST: ${STORAGE_S3_URL_IS_HOST}
+            STORAGE_S3_URL_HOST_PREFIX: ${STORAGE_S3_URL_HOST_PREFIX}
+            STORAGE_S3_URL_HOST_POSTFIX: ${STORAGE_S3_URL_HOST_POSTFIX}
+            EMAILING_SMTP_HOST: ${EMAILING_SMTP_HOST}
+            EMAILING_SMTP_PORT: ${EMAILING_SMTP_PORT}
+            EMAILING_SMTP_USER: ${EMAILING_SMTP_USER}
+            EMAILING_SMTP_PASSWORD: ${EMAILING_SMTP_PASSWORD}
+            EMAILING_DEFAULT_FROM_EMAIL: ${EMAILING_DEFAULT_FROM_EMAIL}
+            EMAILING_DEFAULT_FROM_TITLE: ${EMAILING_DEFAULT_FROM_TITLE}
+
+    cronjob-app:
+        image: neurochar-backend-cronjob:v2
+        networks:
+            - default
+        restart: unless-stopped
+        logging:
+            driver: json-file
+            options:
+                max-size: "50m"
+                max-file: "5" 
+        environment:
+            TZ: Europe/Moscow
+            GLOBAL_SERVER_IP: ${SERVER_IP}
+            GLOBAL_PROJECT_FRONTEND_URL: ${PROJECT_FRONTEND_URL}
+            GLOBAL_PROJECT_API_URL: ${PROJECT_API_URL}
+            GLOBAL_CPANEL_FRONTEND_URL: ${CPANEL_FRONTEND_URL}
+            GLOBAL_CPANEL_API_URL: ${CPANEL_API_URL}
+            GLOBAL_TENANT_MAIN_DOMAIN: ${TENANT_MAIN_DOMAIN}
+            GLOBAL_TENANT_URL_SCHEME: ${TENANT_URL_SCHEME}
+            CRONJOB_APP_BASE_IS_PROD: true
+            CRONJOB_APP_BASE_USE_FX_LOGGER: false
+            CRONJOB_APP_BASE_USE_LOGGER: true
+            CRONJOB_APP_BASE_LOG_SQL_QUERIES: false
+            CRONJOB_APP_BASE_LOG_JOB: false
+            ALERTS_BOT_TOKEN: ${ALERTS_BOT_TOKEN}
+            ALERTS_TARGET_CHANNEL: ${ALERTS_TARGET_CHANNEL}
+            POSTGRES_MASTER_DSN: ${POSTGRES_MASTER_DSN}
+            STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+            STORAGE_S3_ACCESS_KEY: ${STORAGE_S3_ACCESS_KEY}
+            STORAGE_S3_SECRET_KEY: ${STORAGE_S3_SECRET_KEY}
+            STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+            STORAGE_S3_URL: ${STORAGE_S3_URL}
+            STORAGE_S3_URL_IS_HOST: ${STORAGE_S3_URL_IS_HOST}
+            STORAGE_S3_URL_HOST_PREFIX: ${STORAGE_S3_URL_HOST_PREFIX}
+            STORAGE_S3_URL_HOST_POSTFIX: ${STORAGE_S3_URL_HOST_POSTFIX}
+            EMAILING_SMTP_HOST: ${EMAILING_SMTP_HOST}
+            EMAILING_SMTP_PORT: ${EMAILING_SMTP_PORT}
+            EMAILING_SMTP_USER: ${EMAILING_SMTP_USER}
+            EMAILING_SMTP_PASSWORD: ${EMAILING_SMTP_PASSWORD}
+            EMAILING_DEFAULT_FROM_EMAIL: ${EMAILING_DEFAULT_FROM_EMAIL}
+            EMAILING_DEFAULT_FROM_TITLE: ${EMAILING_DEFAULT_FROM_TITLE}

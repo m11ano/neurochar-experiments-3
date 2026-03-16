@@ -1,0 +1,51 @@
+backend_app:
+    name: backend
+    version: 1.0.0
+    base:
+        start_timeout_sec: 30
+        stop_timeout_sec: 15
+        is_prod: false
+        use_fx_logger: true
+        use_logger: true
+        log_sql_queries: false
+        log_http: true
+    http:
+        port: 8080
+        prefix: ""
+        under_proxy: false
+        stop_timeout_sec: 3
+
+temporal_worker_app:
+    name: temporal_worker
+    version: 1.0.0
+    base:
+        start_timeout_sec: 30
+        stop_timeout_sec: 15
+        is_prod: false
+        use_fx_logger: true
+        use_logger: true
+        log_sql_queries: false
+    temporal:
+        host: "127.0.0.1:7233"
+    ml_worker:
+        service: "89.169.173.54:30051"
+        readiness: "http://89.169.173.54:30800/ready"
+        fallback_service: "89.169.173.54:30052"
+
+postgres:
+    max_attempts: 5
+    attempt_sleep_seconds: 1
+    migrations_path: migrations/sql
+    master:
+        dsn: postgres://postgres:12345678@127.0.0.1:5433/neurochar-experiments-1
+
+storage:
+    up_migrations: true
+    s3_endpoint: "http://127.0.0.1:9000"
+    s3_access_key: "minioadmin"
+    s3_secret_key: "minioadmin"
+    s3_region: "local"
+    s3_url_is_host: false
+    s3_url: "http://localhost:9000"
+    s3_url_host_prefix:
+    s3_url_host_postfix:

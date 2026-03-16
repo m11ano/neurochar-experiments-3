@@ -295,8 +295,6 @@ func shouldReconnect(err error) bool {
 }
 
 func (d *WorkerController) ReadTextFromPDF(ctx context.Context, payload JobPayload) (*ReadTextFromPDFResult, error) {
-	processStartedAt := time.Now()
-
 	activity.RecordHeartbeat(ctx, "start")
 
 	file, err := d.s3Client.Download(ctx, storage.BucketCommonFiles, payload.FileKey)
@@ -336,15 +334,11 @@ func (d *WorkerController) ReadTextFromPDF(ctx context.Context, payload JobPaylo
 
 		activity.RecordHeartbeat(ctx, fmt.Sprintf("worker_addr=%s", workerAddr))
 
-		text, err := d.extractTextBidiOnce(ctx, connState, workerAddr, fileData, payload.Filename)
+		result, err := d.extractTextBidiOnce(ctx, connState, workerAddr, fileData, payload.Filename)
 		if err == nil {
 			activity.RecordHeartbeat(ctx, "done")
-			processDuration := time.Since(processStartedAt)
-			return &ReadTextFromPDFResult{
-				Text:            text,
-				UsedFallback:    usedFallback,
-				ProcessDuration: processDuration,
-			}, nil
+			result.UsedFallback = usedFallback
+			return result, nil
 		}
 
 		lastErr = err
@@ -366,10 +360,10 @@ func (d *WorkerController) extractTextBidiOnce(
 	workerAddr string,
 	pdf []byte,
 	filename string,
-) (string, error) {
+) (*ReadTextFromPDFResult, error) {
 	client, _, gen := d.getConnClient(connState)
 	if client == nil {
-		return "", errNotConnected
+		return nil, errNotConnected
 	}
 
 	callCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
@@ -377,7 +371,7 @@ func (d *WorkerController) extractTextBidiOnce(
 
 	stream, err := client.ExtractTextBidi(callCtx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer func() { _ = stream.CloseSend() }()
 
@@ -398,7 +392,7 @@ func (d *WorkerController) extractTextBidiOnce(
 	lastPingSent.Store(0)
 
 	errCh := make(chan error, 1)
-	resCh := make(chan string, 1)
+	resCh := make(chan *ReadTextFromPDFResult, 1)
 
 	var once sync.Once
 	signalErr := func(e error) {
@@ -414,11 +408,11 @@ func (d *WorkerController) extractTextBidiOnce(
 			}
 		})
 	}
-	signalRes := func(s string) {
+	signalRes := func(r *ReadTextFromPDFResult) {
 		once.Do(func() {
 			stop()
 			select {
-			case resCh <- s:
+			case resCh <- r:
 			default:
 			}
 		})
@@ -452,7 +446,10 @@ func (d *WorkerController) extractTextBidiOnce(
 				activity.RecordHeartbeat(ctx, fmt.Sprintf("progress=%v worker=%s", x.Progress, workerAddr))
 
 			case *ocrpb.ServerMsg_Result:
-				signalRes(x.Result.Text)
+				signalRes(&ReadTextFromPDFResult{
+					Text:            x.Result.Text,
+					ProcessDuration: time.Duration(x.Result.ProcessDurationMs) * time.Millisecond,
+				})
 				return
 
 			case *ocrpb.ServerMsg_Error:
@@ -493,7 +490,7 @@ func (d *WorkerController) extractTextBidiOnce(
 			},
 		},
 	}); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	activity.RecordHeartbeat(ctx, fmt.Sprintf("sent_start worker=%s", workerAddr))
@@ -579,7 +576,7 @@ func (d *WorkerController) extractTextBidiOnce(
 					Chunk: &ocrpb.PdfChunk{Data: buf[:n]},
 				},
 			}); err != nil {
-				return "", err
+				return nil, err
 			}
 			sent += int64(n)
 			activity.RecordHeartbeat(ctx, fmt.Sprintf("sent_bytes=%d worker=%s", sent, workerAddr))
@@ -588,7 +585,7 @@ func (d *WorkerController) extractTextBidiOnce(
 			break
 		}
 		if rerr != nil {
-			return "", rerr
+			return nil, rerr
 		}
 	}
 
@@ -599,7 +596,7 @@ func (d *WorkerController) extractTextBidiOnce(
 		if err := stream.Send(&ocrpb.ClientMsg{
 			Payload: &ocrpb.ClientMsg_End{End: &ocrpb.End{}},
 		}); err != nil {
-			return "", err
+			return nil, err
 		}
 		activity.RecordHeartbeat(ctx, fmt.Sprintf("sent_end worker=%s", workerAddr))
 	}
@@ -607,15 +604,15 @@ func (d *WorkerController) extractTextBidiOnce(
 WAIT_RESULT:
 	for {
 		select {
-		case txt := <-resCh:
-			activity.RecordHeartbeat(ctx, fmt.Sprintf("got_result worker=%s", workerAddr))
-			return txt, nil
+		case result := <-resCh:
+			activity.RecordHeartbeat(ctx, fmt.Sprintf("got_result worker=%s process_ms=%d", workerAddr, result.ProcessDuration.Milliseconds()))
+			return result, nil
 
 		case e := <-errCh:
-			return "", e
+			return nil, e
 
 		case <-callCtx.Done():
-			return "", callCtx.Err()
+			return nil, callCtx.Err()
 		}
 	}
 }

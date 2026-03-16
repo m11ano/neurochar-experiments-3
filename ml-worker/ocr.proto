@@ -54,6 +54,7 @@ message Result {
   repeated string languages = 6;
   string text = 7;
   string filename = 8;
+  int64 process_duration_ms = 9;
 }
 
 message Error { string message = 1; }

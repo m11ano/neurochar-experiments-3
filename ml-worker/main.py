@@ -269,7 +269,7 @@ async def process_pdf_with_queue_and_timeout(
                 effective,
             )
 
-            t_ocr_start = time.perf_counter()
+            t_process_start = time.perf_counter()
             result = await asyncio.to_thread(
                 process_pdf_bytes_ocr_easyocr_always_images,
                 pdf_bytes,
@@ -277,13 +277,16 @@ async def process_pdf_with_queue_and_timeout(
                 request_id=request_id,
                 device=device,
             )
-            ocr_s = time.perf_counter() - t_ocr_start
+            process_s = time.perf_counter() - t_process_start
+            process_ms = int(process_s * 1000)
+
+            result["process_duration_ms"] = process_ms
 
             logger.info(
-                "req=%s | ocr_done | pages=%d | ocr_ms=%d | device=%s",
+                "req=%s | ocr_done | pages=%d | process_ms=%d | device=%s",
                 request_id,
                 len(result.get("pages", [])),
-                int(ocr_s * 1000),
+                process_ms,
                 result.get("device", "?"),
             )
             return result
@@ -373,7 +376,13 @@ async def extract_text_ocr(request: Request, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
     total_ms = int((time.perf_counter() - t_total) * 1000)
-    logger.info("req=%s | request_done | total_ms=%d | device=%s", request_id, total_ms, result.get("device", "?"))
+    logger.info(
+        "req=%s | request_done | total_ms=%d | process_ms=%d | device=%s",
+        request_id,
+        total_ms,
+        int(result.get("process_duration_ms", 0)),
+        result.get("device", "?"),
+    )
 
     return JSONResponse({"filename": file.filename, **result})
 
@@ -489,6 +498,7 @@ class OcrService(ocr_pb2_grpc.OcrServiceServicer):
                         languages=list(result.get("languages", [])),
                         text=result.get("text", ""),
                         filename=filename,
+                        process_duration_ms=int(result.get("process_duration_ms", 0)),
                     )
                 )
             )
